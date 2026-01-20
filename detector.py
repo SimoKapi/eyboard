@@ -12,15 +12,16 @@ def draw_landmarks_on_image(rgb_image, detection_result):
 
     for i in range(len(hand_landmarks_list)):
         hand_landmarks = hand_landmarks_list[i]
-        for landmark in hand_landmarks:
+        for landmark in hand_landmarks[8:9]:
             cv.circle(annotated_image, (int(landmark.x * annotated_image.shape[1]), int(landmark.y * annotated_image.shape[0])), 10, (0, 255, 0), -1)
 
     return annotated_image
 
 latest_result = None
 latest_frame = None
+latest_timestamp = None
 def write_results(landmarker_result, frame, timestamp):
-    global latest_result
+    global latest_result, latest_timestamp
     latest_result = landmarker_result
 
 
@@ -40,8 +41,7 @@ options = HandLandmarkerOptions(
 
 running = False
 def start_capture():
-    global running
-    global latest_frame
+    global running, latest_frame, latest_timestamp
     cap = cv.VideoCapture(2)
     if not cap.isOpened():
         print("Cannot open camera")
@@ -55,11 +55,13 @@ def start_capture():
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             break
-        latest_frame = frame.copy()
+
 
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
         timestamp = int(time.time() * 1000)
         landmarker.detect_async(mp_image, timestamp)
+        latest_frame = frame.copy()
+        latest_timestamp = timestamp
 
         time.sleep(0.01)
 
@@ -76,3 +78,6 @@ def get_result():
 
 def get_frame():
     return latest_frame
+
+def get_timestamp():
+    return latest_timestamp
